@@ -10,6 +10,6 @@ class HistoryPenyewaan extends Model
     protected $primaryKey = 'id_history_penyewaan';
     public $timestamps = false;
     protected $fillable = [
-        'id_properti', 'id_penyewa', 'tanggal_mulai_penyewaan', 'tanggal_berhenti_penyewaan', 'status_penyewaan'
+        'id_properti', 'id_user', 'tanggal_mulai_penyewaan', 'tanggal_berhenti_penyewaan', 'status_penyewaan'
     ];
 }

@@ -10,6 +10,6 @@ class DetailPembayaranBilling extends Model
     protected $primaryKey = 'id_detail_pembayaran';
     public $timestamps = false;
     protected $fillable = [
-        'id_billing', 'tanggal_pembayaran', 'total_bayar', 'id_pemilik', 'id_penyewa'
+        'id_billing', 'tanggal_pembayaran', 'total_bayar', 'id_user', 'metode_pembayaran'
     ];
 }

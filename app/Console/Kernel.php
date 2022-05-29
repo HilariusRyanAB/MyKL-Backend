@@ -13,12 +13,12 @@ class Kernel extends ConsoleKernel
      * @var array
      */
     protected $commands = [
-        Commands\CreateDataBilling::class,
-        Commands\EditStatusBilling::class,
-        //Commands\SendBillingOwner::class,
-        //Commands\SendBillingTenant::class,
-        //Commands\DeleteBillingOwner::class,
-        //Commands\DeleteBillingTenant::class,
+        Commands\CreateEntryToken::class,
+        Commands\EditStatusEntryToken::class,
+        Commands\DeleteReportFile::class,
+        Commands\SendNotification1::class,
+        Commands\SendNotification2::class,
+        Commands\SendNotification3::class,
     ];
 
     /**
@@ -29,12 +29,12 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $schedule->command('create:billing')->monthlyOn(1, '01:00');
-        //$schedule->command('send:billingO')->monthlyOn(5, '14:00');
-        //$schedule->command('send:billingT')->monthlyOn(5, '16:00');
-        $schedule->command('update:billing')->monthlyOn(26, '01:00');
-        //$schedule->command('delete:billingO')->monthlyOn(26, '20:00');
-        //$schedule->command('delete:billingT')->monthlyOn(26, '22:00');
+        $schedule->command('create:entryToken')->dailyAt('00:10');
+        $schedule->command('update:entryToken')->dailyAt('00:00');
+        $schedule->command('delete:report')->dailyAt('00:01');
+        $schedule->command('create:sendNotification1')->dailyAt('00:15');
+        $schedule->command('create:sendNotification2')->dailyAt('00:15');
+        $schedule->command('create:sendNotification3')->dailyAt('00:15');
     }
 
     /**

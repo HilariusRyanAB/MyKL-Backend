@@ -8,21 +8,21 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
-class DeleteBillingOwner extends Command
+class DeleteReportFile extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'delete:billingO';
+    protected $signature = 'delete:report';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Command to Delete Billing for Owner';
+    protected $description = 'Command to Delete Report';
 
     /**
      * Create a new command instance.
@@ -41,16 +41,18 @@ class DeleteBillingOwner extends Command
      */
     public function handle()
     {
-        $billings = DB::table('billing')->select('billing.*', 'properti.*', 'pemilik.*')
-                    ->join('properti', 'billing.id_properti', '=', 'properti.id_properti')
-                    ->join('pemilik', 'pemilik.id_pemilik', '=', 'properti.id_pemilik')->get();
+        $billings = DB::table('billing')->select('billing.*')->get();
         
         for($count = 0; $count < count($billings); $count++)
         {
             $billing = $billings[$count];
-
-            $pdfName = 'Billing-'.$billing->nomor_billing.'-O.pdf';
             
+            $billingYear = DB::table('billing')->select(DB::raw("year(tanggal_pembuatan_billing) as tanggal_pembuatan_billing"))->where('id_billing', $billing->id_billing)->first();
+            
+            $property= DB::table('properti')->select('properti.*')->where('properti.id_properti', $billing->id_properti)->first();
+
+            $pdfName = 'Payment-Report-'.$property->nomor_kavling.'-'.$billingYear->tanggal_pembuatan_billing.'.pdf';
+
             Storage::disk('public_uploads')->delete('public/pdf/'.$pdfName);
 
             echo $pdfName." Successfully Deleted\n";

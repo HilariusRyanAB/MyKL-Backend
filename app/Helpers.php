@@ -13,21 +13,21 @@ class Helper
 
     public static function getBulan()
     {
-        return Carbon::now()->translatedFormat('F');
+        return Carbon::now()->format('F');
     }
 
     public static function getTahun()
     {
-        return Carbon::now()->translatedFormat('Y');
+        return Carbon::now()->format('Y');
     }
 
     public static function getDate()
     {
-        return Carbon::now()->translatedFormat('d F Y');
+        return Carbon::now()->format('d F Y');
     }
 
     public static function getTime()
     {
-        return Carbon::now()->translatedFormat('H').':'.Carbon::now()->translatedFormat('i').':'.Carbon::now()->translatedFormat('s');
+        return Carbon::now()->format('H').':'.Carbon::now()->format('i').':'.Carbon::now()->format('s');
     }
 }

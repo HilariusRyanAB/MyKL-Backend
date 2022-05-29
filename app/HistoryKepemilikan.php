@@ -10,6 +10,6 @@ class HistoryKepemilikan extends Model
     protected $primaryKey = 'id_history_kepemilikan';
     public $timestamps = false;
     protected $fillable = [
-        'id_properti', 'id_pemilik', 'tanggal_mulai_kepemilikan', 'tanggal_berhenti_kepemilikan', 'status_kepemilikan'
+        'id_properti', 'id_user', 'tanggal_mulai_kepemilikan', 'tanggal_berhenti_kepemilikan', 'status_kepemilikan'
     ];
 }
