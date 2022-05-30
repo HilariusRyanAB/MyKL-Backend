@@ -14,9 +14,21 @@ use App\WaterFacility;
 use App\Http\Controllers\Api\BillingController;
 use Validator;
 use Illuminate\Support\Facades\DB;
+use Midtrans\Config;
 
 class DetailPembayaranBillingController extends Controller
 {
+    private $id_merchant;
+
+    public function __construct()
+    {
+        Config::$isProduction = env("PRODUCTION");
+        Config::$serverKey = env("MIDTRANS_SERVER_KEY");
+        $id_merchant = env("MIDTRANS_MERCHANT_ID");
+        Config::$isSanitized = false;
+        Config::$is3ds = false;
+    }
+
     //Mobile
     public function readMobile($id)
     {
@@ -67,7 +79,7 @@ class DetailPembayaranBillingController extends Controller
         ], 404);
     }
 
-    public function addMobile(Request $request)
+    public function addMobile(Request $request): \Illuminate\Http\JsonResponse
     {
         $storeData = $request->all();
         $validate = Validator::make($storeData,
@@ -75,52 +87,113 @@ class DetailPembayaranBillingController extends Controller
             'id_user' => 'required',
             'id_billing' => 'required|numeric', 
             'tanggal_pembayaran' => 'required',
-            'total_bayar' => 'required', 
+            'metode_pembayaran' => 'required',
+            'total_bayar' => '',
+            'status_detail_pembayaran' => '',
         ]);
-
-        $billing = Billing::find($storeData->id_billing);
-        $billing->status_billing = "Paid";
-        $billing->save();
-
-        $property = Properti::find($billing->id_properti);
-        $property->jumlah_denda = 0;
-        $property->save();
-        
-        $internetAccesses = DB::table('internet_access')
-                        ->select('internet_access.*')
-                        ->where('id_properti', '=', $billing->id_properti)
-                        ->first();
-        $internetAccess = InternetAccess::find($internetAccesses->id_internet_access);
-        $internetAccess->status_internet_access = "Active";
-        $internetAccess->save();
-
-        $cctvAccesses = DB::table('cctv_access')
-                        ->select('cctv_access.*')
-                        ->where('id_properti', '=', $billing->id_properti)
-                        ->first();
-        $cctvAccess = CCTVAccess::find($cctvAccesses->id_cctv_access);
-        $cctvAccess->status_cctv_access = "Active";
-        $cctvAccess->save();
-        
-        $waterFacilities = DB::table('water_facility')
-                        ->select('water_facility.*')
-                        ->where('id_properti', '=', $billing->id_properti)
-                        ->first();
-        $waterFacility = WaterFacility::find($waterFacilities->id_water_facility);
-        $waterFacility->status_water_facility = "Active";
-        $waterFacility->save();
 
         if($validate->fails())
         {
             return response(['message' => $validate->errors()], 400);
         }
 
-        $detailPembayaranBilling = DetailPembayaranBilling::create($storeData);
-        return response
-        (
-            [
+        $user = User::find($storeData->id_user);
+        $billing = Billing::find($storeData->id_billing);
+        $property = Properti::find($billing->id_properti);
+        $storeData['total_bayar'] = $bilingg->total_biaya;
+        $storeData['status_detail_pembayaran'] = "Pending";
+        $generatedData = $this->generatingData($billing, $user, $property, $storeData->metode_pembayaran);
+
+        try 
+        {
+            $charge = \Midtrans\CoreApi::charge($generatedData);
+            $charge->va_numbers = [
+                [
+                    'bank' => $storeData->metode_pembayaran,
+                    'va_number' => $charge->biller_code.$charge->bill_key
+                ]
+            ];
+
+            $billing->status_billing = "Paid";
+            $billing->save();
+
+            $property = Properti::find($billing->id_properti);
+            $property->jumlah_denda = 0;
+            $property->save();
+            
+            $internetAccesses = DB::table('internet_access')
+                            ->select('internet_access.*')
+                            ->where('id_properti', '=', $billing->id_properti)
+                            ->first();
+            $internetAccess = InternetAccess::find($internetAccesses->id_internet_access);
+            $internetAccess->status_internet_access = "Active";
+            $internetAccess->save();
+
+            $cctvAccesses = DB::table('cctv_access')
+                            ->select('cctv_access.*')
+                            ->where('id_properti', '=', $billing->id_properti)
+                            ->first();
+            $cctvAccess = CCTVAccess::find($cctvAccesses->id_cctv_access);
+            $cctvAccess->status_cctv_access = "Active";
+            $cctvAccess->save();
+            
+            $waterFacilities = DB::table('water_facility')
+                            ->select('water_facility.*')
+                            ->where('id_properti', '=', $billing->id_properti)
+                            ->first();
+            $waterFacility = WaterFacility::find($waterFacilities->id_water_facility);
+            $waterFacility->status_water_facility = "Active";
+            $waterFacility->save();
+            
+            $detailPembayaranBilling = DetailPembayaranBilling::create($storeData);
+
+            return response()->json([
                 'message' => 'Detail Billing Payment Added Successfully',
-                'data' => $detailPembayaranBilling,
-            ], 200);
+                'data' => $charge,
+            ]);
+        } 
+        catch (\Exception $e) 
+        {
+            return response()->json([
+                'data' => $e,
+            ], 500);
+        }
+    }
+
+    public function generatingData($billing, $user, $property, $bank)
+    {
+        $item = array(
+            'id' => $billing->id_properti,
+            'price' => $billing->total_biaya,
+            'quantity' => 1,
+            'name' => 'Billing Property '.$property->nomor_kavling,
+        );
+
+        $full_name = explode(" ", $user->nama_user);
+        $firstname = $full_name[0];
+        $lastname = (count($full_name) < 2) ? " " : $full_name[1];
+        $customerData = array(
+            'first_name' => $firstname,
+            "last_name" => $lastname,
+            "email" => $user->email_user,
+            "phone" => $user->nomor_telepon_user,
+        );
+
+        $transaction = array(
+            'transaction_details' => array(
+                'order_id'       => $billing->nomor_billing,
+                'gross_amount'   => $billing->total_biaya,
+            ),
+            'item_details' => $item,
+            'customer_details' => $customerData,
+        );
+
+        $transaction['payment_type'] = "bank_transfer";
+        $transaction['bank_transfer'] = array(
+            "bank" => $bank,
+            "va_number" => "1234567891"
+        );
+
+        return $transaction;
     }
 }
