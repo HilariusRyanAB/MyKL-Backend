@@ -81,6 +81,7 @@ class DetailPembayaranBillingController extends Controller
 
     public function addMobile(Request $request): \Illuminate\Http\JsonResponse
     {
+        $count = 1;
         $storeData = $request->all();
         $validate = Validator::make($storeData,
         [
@@ -91,69 +92,84 @@ class DetailPembayaranBillingController extends Controller
             'total_bayar' => '',
             'status_detail_pembayaran' => '',
         ]);
+        dd($count);
 
         if($validate->fails())
         {
             return response(['message' => $validate->errors()], 400);
         }
+        $count = $count + 1;
+        dd($count);
 
-        $user = User::find($storeData->id_user);
-        $billing = Billing::find($storeData->id_billing);
+        $user = User::find($storeData['id_user']);
+        $billing = Billing::find($storeData['id_billing']);
         $property = Properti::find($billing->id_properti);
-        $storeData['total_bayar'] = $bilingg->total_biaya;
+        $storeData['total_bayar'] = $billing->total_biaya;
         $storeData['status_detail_pembayaran'] = "Pending";
-        $generatedData = $this->generatingData($billing, $user, $property, $storeData->metode_pembayaran);
-
+        $count = $count + 1;
+        dd($count);
+        $generatedData = $this->generatingData($billing, $user, $property, $storeData['metode_pembayaran']);
+        $count = $count + 1;
+        dd($count);
         try 
         {
+            $count = $count + 1;
+            dd($count);
             $charge = \Midtrans\CoreApi::charge($generatedData);
+            $count = $count + 1;
+            dd($count);
             $charge->va_numbers = [
                 [
-                    'bank' => $storeData->metode_pembayaran,
+                    'bank' => $storeData['metode_pembayaran'],
                     'va_number' => $charge->biller_code.$charge->bill_key
                 ]
             ];
+            $count = $count + 1;
+            dd($count);
 
-            $billing->status_billing = "Paid";
-            $billing->save();
+            // $billing->status_billing = "Paid";
+            // $billing->save();
+            
+            // $property->jumlah_denda = 0;
+            // $property->save();
+            
+            // $internetAccesses = DB::table('internet_access')
+            //                 ->select('internet_access.*')
+            //                 ->where('id_properti', '=', $billing->id_properti)
+            //                 ->first();
+            // $internetAccess = InternetAccess::find($internetAccesses->id_internet_access);
+            // $internetAccess->status_internet_access = "Active";
+            // $internetAccess->save();
 
-            $property = Properti::find($billing->id_properti);
-            $property->jumlah_denda = 0;
-            $property->save();
+            // $cctvAccesses = DB::table('cctv_access')
+            //                 ->select('cctv_access.*')
+            //                 ->where('id_properti', '=', $billing->id_properti)
+            //                 ->first();
+            // $cctvAccess = CCTVAccess::find($cctvAccesses->id_cctv_access);
+            // $cctvAccess->status_cctv_access = "Active";
+            // $cctvAccess->save();
             
-            $internetAccesses = DB::table('internet_access')
-                            ->select('internet_access.*')
-                            ->where('id_properti', '=', $billing->id_properti)
-                            ->first();
-            $internetAccess = InternetAccess::find($internetAccesses->id_internet_access);
-            $internetAccess->status_internet_access = "Active";
-            $internetAccess->save();
-
-            $cctvAccesses = DB::table('cctv_access')
-                            ->select('cctv_access.*')
-                            ->where('id_properti', '=', $billing->id_properti)
-                            ->first();
-            $cctvAccess = CCTVAccess::find($cctvAccesses->id_cctv_access);
-            $cctvAccess->status_cctv_access = "Active";
-            $cctvAccess->save();
+            // $waterFacilities = DB::table('water_facility')
+            //                 ->select('water_facility.*')
+            //                 ->where('id_properti', '=', $billing->id_properti)
+            //                 ->first();
+            // $waterFacility = WaterFacility::find($waterFacilities->id_water_facility);
+            // $waterFacility->status_water_facility = "Active";
+            // $waterFacility->save();
             
-            $waterFacilities = DB::table('water_facility')
-                            ->select('water_facility.*')
-                            ->where('id_properti', '=', $billing->id_properti)
-                            ->first();
-            $waterFacility = WaterFacility::find($waterFacilities->id_water_facility);
-            $waterFacility->status_water_facility = "Active";
-            $waterFacility->save();
-            
-            $detailPembayaranBilling = DetailPembayaranBilling::create($storeData);
+            // $detailPembayaranBilling = DetailPembayaranBilling::create($storeData);
 
             return response()->json([
                 'message' => 'Detail Billing Payment Added Successfully',
                 'data' => $charge,
             ]);
+            $count = $count + 1;
+            dd($count);
         } 
         catch (\Exception $e) 
         {
+            $count = 10;
+            dd($count);
             return response()->json([
                 'data' => $e,
             ], 500);
@@ -162,12 +178,16 @@ class DetailPembayaranBillingController extends Controller
 
     public function generatingData($billing, $user, $property, $bank)
     {
+        $count = 11;
+        dd($count);
         $item = array(
             'id' => $billing->id_properti,
             'price' => $billing->total_biaya,
             'quantity' => 1,
             'name' => 'Billing Property '.$property->nomor_kavling,
         );
+        $count = $count + 1;
+        dd($count);
 
         $full_name = explode(" ", $user->nama_user);
         $firstname = $full_name[0];
@@ -178,6 +198,8 @@ class DetailPembayaranBillingController extends Controller
             "email" => $user->email_user,
             "phone" => $user->nomor_telepon_user,
         );
+        $count = $count + 1;
+        dd($count);
 
         $transaction = array(
             'transaction_details' => array(
@@ -187,12 +209,16 @@ class DetailPembayaranBillingController extends Controller
             'item_details' => $item,
             'customer_details' => $customerData,
         );
+        $count = $count + 1;
+        dd($count);
 
         $transaction['payment_type'] = "bank_transfer";
         $transaction['bank_transfer'] = array(
             "bank" => $bank,
             "va_number" => "1234567891"
         );
+        $count = $count + 1;
+        dd($count);
 
         return $transaction;
     }
