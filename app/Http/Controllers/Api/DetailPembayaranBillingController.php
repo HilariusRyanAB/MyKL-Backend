@@ -81,7 +81,6 @@ class DetailPembayaranBillingController extends Controller
 
     public function addMobile(Request $request): \Illuminate\Http\JsonResponse
     {
-        $count = 1;
         $storeData = $request->all();
         $validate = Validator::make($storeData,
         [
@@ -92,40 +91,34 @@ class DetailPembayaranBillingController extends Controller
             'total_bayar' => '',
             'status_detail_pembayaran' => '',
         ]);
-        dd($count);
+        error_log("1");
 
         if($validate->fails())
         {
             return response(['message' => $validate->errors()], 400);
         }
-        $count = $count + 1;
-        dd($count);
+        error_log("2");
 
         $user = User::find($storeData['id_user']);
         $billing = Billing::find($storeData['id_billing']);
         $property = Properti::find($billing->id_properti);
         $storeData['total_bayar'] = $billing->total_biaya;
         $storeData['status_detail_pembayaran'] = "Pending";
-        $count = $count + 1;
-        dd($count);
+        error_log("3");
         $generatedData = $this->generatingData($billing, $user, $property, $storeData['metode_pembayaran']);
-        $count = $count + 1;
-        dd($count);
+
         try 
         {
-            $count = $count + 1;
-            dd($count);
+            error_log("4");
             $charge = \Midtrans\CoreApi::charge($generatedData);
-            $count = $count + 1;
-            dd($count);
+            error_log("5");
             $charge->va_numbers = [
                 [
                     'bank' => $storeData['metode_pembayaran'],
                     'va_number' => $charge->biller_code.$charge->bill_key
                 ]
             ];
-            $count = $count + 1;
-            dd($count);
+            error_log("6");
 
             // $billing->status_billing = "Paid";
             // $billing->save();
@@ -163,14 +156,13 @@ class DetailPembayaranBillingController extends Controller
                 'message' => 'Detail Billing Payment Added Successfully',
                 'data' => $charge,
             ]);
-            $count = $count + 1;
-            dd($count);
+            error_log("7");
         } 
         catch (\Exception $e) 
         {
-            $count = 10;
-            dd($count);
+            error_log("8");
             return response()->json([
+                'message' => 'Detail Billing Payment Cannot be Added',
                 'data' => $e,
             ], 500);
         }
@@ -178,16 +170,13 @@ class DetailPembayaranBillingController extends Controller
 
     public function generatingData($billing, $user, $property, $bank)
     {
-        $count = 11;
-        dd($count);
         $item = array(
             'id' => $billing->id_properti,
             'price' => $billing->total_biaya,
             'quantity' => 1,
             'name' => 'Billing Property '.$property->nomor_kavling,
         );
-        $count = $count + 1;
-        dd($count);
+        error_log("9");
 
         $full_name = explode(" ", $user->nama_user);
         $firstname = $full_name[0];
@@ -198,8 +187,7 @@ class DetailPembayaranBillingController extends Controller
             "email" => $user->email_user,
             "phone" => $user->nomor_telepon_user,
         );
-        $count = $count + 1;
-        dd($count);
+        error_log("10");
 
         $transaction = array(
             'transaction_details' => array(
@@ -209,16 +197,14 @@ class DetailPembayaranBillingController extends Controller
             'item_details' => $item,
             'customer_details' => $customerData,
         );
-        $count = $count + 1;
-        dd($count);
+        error_log("11");
 
         $transaction['payment_type'] = "bank_transfer";
         $transaction['bank_transfer'] = array(
             "bank" => $bank,
             "va_number" => "1234567891"
         );
-        $count = $count + 1;
-        dd($count);
+        error_log("12");
 
         return $transaction;
     }
